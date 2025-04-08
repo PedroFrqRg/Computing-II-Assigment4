@@ -84,14 +84,14 @@ EXTI0_IRQHandler:
 
   PUSH  {R4, R5, LR}
 
-  @ LDR   R4, =SYSTICK_VAL
-  @ LDR   R5, [R4]                    @   SYSTICK_VAL = 0x1; // Reset SysTick internal counter to 0
+  LDR   R4, =SYSTICK_VAL
+  LDR   R5, [R4]                    
 
   LDR   R4, =SYSTICK_LOAD           
   LDR   R6, [R4]
 
   SUB   R5, R6, R5                  @   clock_tics = SYSTICK_LOAD - SYSTICK_VAL;
-  MOV   R4, #7999                   @   tmp = 7999;
+  LDR   R4, =10000000000                   @   tmp = 7999;
   SDIV  R5, R5, R4                  @   elapsed_time = clock_tics / tmp;
 
   LDR   R4, =.Lelapsed_time         @   elapsed_time = clock_tics / tmp;
@@ -248,7 +248,7 @@ random_delay:                           @ int random_delay()
     BLS         .Lendif_1               @   {
     MOV         R4, #6                  @       random_num = 6;
 .Lendif_1:                              @   }
-    MOV         R5, #7999               @   int tmp = 1000;
+    LDR         R5, =10000000000               @   int tmp = 1000;
     MUL         R4, R4, R5              @   random_num *= tmp;
     MOV         R0, R4                  @   return rand_num;
     POP         {R4, R5, PC}            @ }
@@ -316,7 +316,6 @@ calculate_score:
     LDR     R6, [R5]                    @
     ORR     R6, #(0b1<<(LD3_PIN))       @ GPIOE_ODR |= (1<<LD3_PIN);
     STR     R6, [R5]                    @ 
-
 .Lcase_2:                               @  case 150:
     LDR     R6, [R5]                    @
     ORR     R6, #(0b1<<(LD5_PIN))       @ GPIOE_ODR |= (1<<LD4_PIN);
