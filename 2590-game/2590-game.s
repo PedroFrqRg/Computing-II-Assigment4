@@ -23,15 +23,6 @@ Main:
   BL     GPIO_enable
   BL     LED_init_output
 
-  @ Configure SysTick Timer to generate an interrupt after delay
-  BL     random_delay
-  BL     SysTick_config
-
-  @
-  @ Prepare external interrupt Line 0 (USER pushbutton)
-  @ We'll count the number of times the button is pressed
-  @
-
   @ Initialise button_pressed flag to false
   LDR   R4, =button_pressed           @ button_pressed = false;
   MOV   R5, #0                        @
@@ -42,6 +33,10 @@ Main:
   @ Determined by bits 3..0 of the External Interrrupt Control
   @   Register (EXTIICR)
   BL     USER_button_config
+
+  @ Configure SysTick Timer to generate an interrupt after delay
+  BL     random_delay
+  BL     SysTick_config  
 
   @ Infinte loop waiting for interrupts
 .LIdle_Loop:
@@ -58,16 +53,16 @@ End_Main:
   .type  SysTick_Handler, %function
 SysTick_Handler:
 
-  PUSH  {R4, R5, LR}
+  PUSH  {R4, R5, LR}  
+
+  LDR    R4, =SYSTICK_VAL
+  MOV    R5, #0x1
+  STR    R5, [R4]                   @   SYSTICK_VAL = 0x1; // Reset SysTick internal counter to 0
 
   LDR     R4, =GPIOE_ODR            @   Turn on LD3
   LDR     R5, [R4]                  @
   ORR     R5, #(0b1<<(LD3_PIN))     @ GPIOE_ODR |= (1<<LD3_PIN);
   STR     R5, [R4]                  @ 
-
-  LDR    R4, =SYSTICK_VAL
-  MOV    R5, #0x1
-  STR    R5, [R4]                  @   SYSTICK_VAL = 0x1; // Reset SysTick internal counter to 0
 
   LDR   R4, =button_pressed           @ button_pressed = false;
   MOV   R5, #0                        @
@@ -87,10 +82,10 @@ SysTick_Handler:
   .type  EXTI0_IRQHandler, %function
 EXTI0_IRQHandler:
 
-  PUSH  {R4-R6,LR}
+  PUSH  {R4, R5, LR}
 
-  LDR   R4, =SYSTICK_VAL
-  LDR   R5, [R4]                    @   SYSTICK_VAL = 0x1; // Reset SysTick internal counter to 0
+  @ LDR   R4, =SYSTICK_VAL
+  @ LDR   R5, [R4]                    @   SYSTICK_VAL = 0x1; // Reset SysTick internal counter to 0
 
   LDR   R4, =SYSTICK_LOAD           
   LDR   R6, [R4]
@@ -106,6 +101,11 @@ EXTI0_IRQHandler:
   MOV   R5, #1                      @
   STR   R5, [R4]                    @
 
+  LDR     R4, =GPIOE_ODR            @   Turn on LD3
+  LDR     R5, [R4]                  @
+  BIC     R5, #(0b1<<(LD3_PIN))     @ GPIOE_ODR |= (1<<LD3_PIN);
+  STR     R5, [R4]                  @ 
+
   BL    calculate_score
 
   LDR   R4, =EXTI_PR                @ Clear (acknowledge) the interrupt
@@ -113,7 +113,7 @@ EXTI0_IRQHandler:
   STR   R5, [R4]                    @
 
   @ Return from interrupt handler
-  POP  {R4-R6,PC}
+  POP  {R4, R5,PC}
 
 @
 @ GPIO_enable subroutine
@@ -137,8 +137,44 @@ LED_init_output:                                        @ void LED_init_output()
   BIC     R5, #(0b11<<(LD3_PIN*2))    @ Modify ...
   ORR     R5, #(0b01<<(LD3_PIN*2))    @ write 01 to bits 
   STR     R5, [R4]                    @ Write 
+
+
+  LDR     R5, [R4]                    @ Read ...
+  BIC     R5, #(0b11<<(LD4_PIN*2))    @ Modify ...
+  ORR     R5, #(0b01<<(LD4_PIN*2))    @ write 01 to bits 
+  STR     R5, [R4]                    @ Write 
+
+  LDR     R5, [R4]                    @ Read ...
+  BIC     R5, #(0b11<<(LD5_PIN*2))    @ Modify ...
+  ORR     R5, #(0b01<<(LD5_PIN*2))    @ write 01 to bits 
+  STR     R5, [R4]                    @ Write 
+
+  LDR     R5, [R4]                    @ Read ...
+  BIC     R5, #(0b11<<(LD6_PIN*2))    @ Modify ...
+  ORR     R5, #(0b01<<(LD6_PIN*2))    @ write 01 to bits 
+  STR     R5, [R4]                    @ Write 
+
+  LDR     R5, [R4]                    @ Read ...
+  BIC     R5, #(0b11<<(LD7_PIN*2))    @ Modify ...
+  ORR     R5, #(0b01<<(LD7_PIN*2))    @ write 01 to bits 
+  STR     R5, [R4]                    @ Write 
+
+  LDR     R5, [R4]                    @ Read ...
+  BIC     R5, #(0b11<<(LD8_PIN*2))    @ Modify ...
+  ORR     R5, #(0b01<<(LD8_PIN*2))    @ write 01 to bits 
+  STR     R5, [R4]                    @ Write 
+
+  LDR     R5, [R4]                    @ Read ...
+  BIC     R5, #(0b11<<(LD9_PIN*2))    @ Modify ...
+  ORR     R5, #(0b01<<(LD9_PIN*2))    @ write 01 to bits 
+  STR     R5, [R4]                    @ Write
+
+  LDR     R5, [R4]                    @ Read ...
+  BIC     R5, #(0b11<<(LD10_PIN*2))    @ Modify ...
+  ORR     R5, #(0b01<<(LD10_PIN*2))    @ write 01 to bits 
+  STR     R5, [R4]                    @ Write 
   
-  POP     {R4, R5, LR}                                  @ }
+  POP     {R4, R5, PC}                                  @ }
 
 
 @
@@ -153,7 +189,7 @@ LED_init_output:                                        @ void LED_init_output()
 @   None
 @
 SysTick_config:                                                 @ void SysTick_config(int delay) 
-  PUSH    {R4, R5, LR}                                          @ {
+  PUSH    {R4-R6, LR}                                          @ {
   MOV     R6, R0                                                @   
   LDR     R4, =SCB_ICSR                                         @   // Clear any pre-existing interrupts
   LDR     R5, =SCB_ICSR_PENDSTCLR                               @   SCB_ICSR = SCB_ICSR_PENDSTCLR;
@@ -169,7 +205,7 @@ SysTick_config:                                                 @ void SysTick_c
   LDR     R4, =SYSTICK_CSR                                      @   // Start SysTick timer by setting CSR to 0x7
   LDR     R5, =0x7                                              @   SYSTICK_CSR = 0x7;
   STR     R5, [R4]                                              @
-  POP     {R4, R5, LR}                                          @ }
+  POP     {R4-R6, PC}                                          @ }
 
 USER_button_config:                                             @ void USER_button_config()
   PUSH    {R4, R5, LR}                                          @ {
@@ -188,7 +224,7 @@ USER_button_config:                                             @ void USER_butt
   LDR     R4, =NVIC_ISER                                        @   // Enable NVIC interrupt #6 (external interrupt Line0)
   MOV     R5, #(1<<6)                                           @   NVIC_ISER = 1<<6;
   STR     R5, [R4]                                              @
-  POP     {R4, R5, LR}                                          @ }
+  POP     {R4, R5, PC}                                          @ }
 
 @
 @ random_delay subroutine
@@ -254,28 +290,28 @@ rng:                                    @ int rng()
 @   None
 @
 calculate_score:
-    PUSH        {R4-R6, LR}            @ {
+    PUSH        {R4-R6, LR}             @ {
     LDR         R4, =.Lelapsed_time     @   int delay = .Lelapsed_time;
     LDR         R4, [R4]                @  
 
-    LDR         R5, =GPIOE_ODR              @   Turn on LD3
+    LDR         R5, =GPIOE_ODR          
 
     CMP         R4, #100                @ switch(delay)
-    BEQ         .Lcase_1                @
+    BLS         .Lcase_1                @
     CMP         R4, #150                
-    BEQ         .Lcase_2
+    BLS         .Lcase_2
     CMP         R4, #200                
-    BEQ         .Lcase_3
+    BLS         .Lcase_3
     CMP         R4, #250                
-    BEQ         .Lcase_4
+    BLS         .Lcase_4
     CMP         R4, #300                
-    BEQ         .Lcase_5
+    BLS         .Lcase_5
     CMP         R4, #350                
-    BEQ         .Lcase_6  
+    BLS         .Lcase_6  
     CMP         R4, #400                
-    BEQ         .Lcase_7
+    BLS         .Lcase_7
     CMP         R4, #450                
-    BEQ         .Lcase_8  
+    BLS         .Lcase_8  
 .Lcase_1:                               @  case 100:    
     LDR     R6, [R5]                    @
     ORR     R6, #(0b1<<(LD3_PIN))       @ GPIOE_ODR |= (1<<LD3_PIN);
