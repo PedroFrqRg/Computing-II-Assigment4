@@ -21,14 +21,7 @@ Main:
   PUSH  {R4-R5, LR}
 
   BL     GPIO_enable
-
   BL     LED_init_output
-
-  @ Initialise the first countdown
-
-@   LDR     R4, =blink_countdown
-@   LDR     R5, =BLINK_PERIOD
-@   STR     R5, [R4] 
 
   @ Configure SysTick Timer to generate an interrupt after delay
   BL     random_delay
@@ -40,7 +33,7 @@ Main:
   @
 
   @ Initialise button_pressed flag to false
-  LDR   R4, =button_pressed           @ button_pressed = 0;
+  LDR   R4, =button_pressed           @ button_pressed = false;
   MOV   R5, #0                        @
   STR   R5, [R4]                      @
 
@@ -55,40 +48,30 @@ Main:
   B     .LIdle_Loop
   
 End_Main:
-  POP   {R4-R5,PC}
+  POP   {R4-R5, PC}
 
 
 
 @
-@ SysTick interrupt handler (blink LED LD3)
+@ SysTick interrupt handler (Turn on corresponding LEDs)
 @
   .type  SysTick_Handler, %function
 SysTick_Handler:
 
   PUSH  {R4, R5, LR}
 
-  LDR   R4, =blink_countdown        @ if (countdown != 0) {
-  LDR   R5, [R4]                    @
-  CMP   R5, #0                      @
-  BEQ   .LelseFire                  @
-
-  SUB   R5, R5, #1                  @   countdown = countdown - 1;
-  STR   R5, [R4]                    @
-
-  B     .LendIfDelay                @ }
-
-.LelseFire:                         @ else {
-
-  LDR     R4, =GPIOE_ODR            @   Invert LD3
+  LDR     R4, =GPIOE_ODR            @   Turn on LD3
   LDR     R5, [R4]                  @
-  EOR     R5, #(0b1<<(LD3_PIN))     @   GPIOE_ODR = GPIOE_ODR ^ (1<<LD3_PIN);
+  ORR     R5, #(0b1<<(LD3_PIN))     @ GPIOE_ODR |= (1<<LD3_PIN);
   STR     R5, [R4]                  @ 
 
-  LDR     R4, =blink_countdown      @   countdown = BLINK_PERIOD;
-  LDR     R5, =BLINK_PERIOD         @
-  STR     R5, [R4]                  @
+  LDR    R4, =SYSTICK_VAL
+  MOV    R5, #0x1
+  STR    R5, [R4]                  @   SYSTICK_VAL = 0x1; // Reset SysTick internal counter to 0
 
-.LendIfDelay:                       @ }
+  LDR   R4, =button_pressed           @ button_pressed = false;
+  MOV   R5, #0                        @
+  STR   R5, [R4]                      @
 
   LDR     R4, =SCB_ICSR             @ Clear (acknowledge) the interrupt
   LDR     R5, =SCB_ICSR_PENDSTCLR   @
@@ -104,7 +87,20 @@ SysTick_Handler:
   .type  EXTI0_IRQHandler, %function
 EXTI0_IRQHandler:
 
-  PUSH  {R4,R5,LR}
+  PUSH  {R4-R6,LR}
+
+  LDR   R4, =SYSTICK_VAL
+  LDR   R5, [R4]                    @   SYSTICK_VAL = 0x1; // Reset SysTick internal counter to 0
+
+  LDR   R4, =SYSTICK_LOAD           
+  LDR   R6, [R4]
+
+  SUB   R5, R6, R5                  @   clock_tics = SYSTICK_LOAD - SYSTICK_VAL;
+  MOV   R4, #7999                   @   tmp = 7999;
+  SDIV  R5, R5, R4                  @   elapsed_time = clock_tics / tmp;
+
+  LDR   R4, =.Lelapsed_time         @   elapsed_time = clock_tics / tmp;
+  STR   R5, [R4]                    @
 
   LDR   R4, =button_pressed         @ button_pressed = true;
   MOV   R5, #1                      @
@@ -115,7 +111,7 @@ EXTI0_IRQHandler:
   STR   R5, [R4]                    @
 
   @ Return from interrupt handler
-  POP  {R4,R5,PC}
+  POP  {R4-R6,PC}
 
 @
 @ GPIO_enable subroutine
@@ -244,12 +240,37 @@ rng:                                    @ int rng()
     MOV         R0, R4                  @   return x;
     POP         {R4-R6, PC}             @ }
 
+@
+@ calculate_score
+@
+@ Calculate the score based on the elapsed time
+@
+@ Parameters:
+@   None
+@
+@ Returns: 
+@   R0: score - calculated score
+@
+calculate_score:
+    PUSH        {R4, R5, LR}            @ {
+    LDR         R4, =.Lelapsed_time     @   int elapsed_time = .Lelapsed_time;
+    LDR         R4, [R4]                @
+    
+    CMP         R4, #100                @   switch (elapsed_time)
+    BEQ         .Lcase_1                @   {
+  .Lcase_1
+    MOV         R5, #8                  @       score = 8;
+    
+    POP         {R4, R5, LR}            @   int score = 0;
+
+    
+
   .section .data
   
 button_pressed:                         @ bool button_pressed;
   .space  4
 
-blink_countdown:
+.Lelapsed_time:                         @ int elapsed_time;           
   .space  4
 
 .Lseed:                                 @ int seed = 123456789;
