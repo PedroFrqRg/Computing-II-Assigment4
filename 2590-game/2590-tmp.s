@@ -256,12 +256,53 @@ calculate_score:
     LDR         R4, =.Lelapsed_time     @   int elapsed_time = .Lelapsed_time;
     LDR         R4, [R4]                @
     
-    CMP         R4, #100                @   switch (elapsed_time)
-    BEQ         .Lcase_1                @   {
-  .Lcase_1
+    CMP         R4, #100                @ switch(delay)
+    BEQ         .Lcase_1                @
+    CMP         R4, #150                
+    BEQ         .Lcase_2
+    CMP         R4, #200                
+    BEQ         .Lcase_3
+    CMP         R4, #250                
+    BEQ         .Lcase_4
+    CMP         R4, #300                
+    BEQ         .Lcase_5
+    CMP         R4, #350                
+    BEQ         .Lcase_6  
+    CMP         R4, #400                
+    BEQ         .Lcase_7
+    CMP         R4, #450                
+    BEQ         .Lcase_8    
+
+
+
+.Lcase_1:                               @  case 100:
     MOV         R5, #8                  @       score = 8;
-    
+    B           .LendSwitch             @       break;
+.Lcase_2:                               @  case 150:
+    MOV         R5, #7                  @       score = 7;
+    B           .LendSwitch             @       break;
+.Lcase_3:                               @  case 200：
+    MOV         R5, #6                  @       score = 6;
+    B           .LendSwitch             @       break;
+.Lcase_4:                               @  case 250:
+    MOV         R5, #5                  @       score = 5;
+    B           .LendSwitch             @       break;
+.Lcase_5:                               @  case 300:
+    MOV         R5, #4                  @       score = 4;
+    B           .LendSwitch             @       break;
+.Lcase_6:                               @  case 350:
+    MOV         R5, #3                  @       score = 3;
+    B           .LendSwitch             @       break;
+.Lcase_7:                               @  case 400:
+    MOV         R5, #2                  @       score = 2;
+    B           .LendSwitch             @       break;
+.Lcase_8:                               @  case 450:
+    MOV         R5, #1                  @       score = 1;
+
+.LendSwitch:
+    MOV         R0,R5
     POP         {R4, R5, LR}            @   int score = 0;
+
 
     
 
