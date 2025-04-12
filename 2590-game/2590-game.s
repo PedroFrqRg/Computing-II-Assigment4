@@ -1,5 +1,10 @@
 # LINK TO TEAM VIDEO
+#
+# Link to video on Google Drive:
 # https://drive.google.com/file/d/1DrjhTupPZAkUUCNG-1IAQT449qx9L-SV/view?usp=sharing
+#
+# or access the following link to download it:
+# https://media.heanet.ie/page/3dbd1e313ca54cfa8b25b659cc41480c
 
   .syntax unified
   .cpu cortex-m4
